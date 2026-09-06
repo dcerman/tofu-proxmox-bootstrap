@@ -4,8 +4,8 @@ variable "proxmox_endpoint" {
 }
 
 variable "proxmox_bootstrap_api_token" {
-  type      = string
-  sensitive = true
+  type        = string
+  sensitive   = true
   description = <<-EOT
     A root-scoped API token used ONLY to run this project. Generate it by
     hand, once, via the Proxmox web UI: Datacenter -> Permissions ->
