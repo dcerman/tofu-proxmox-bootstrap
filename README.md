@@ -15,8 +15,9 @@ non-SSH API path today).
 | Manual command (old README) | This project's resource |
 |---|---|
 | `pveum role add TerraformProv -privs "..."` | `proxmox_virtual_environment_role.opentofu` |
-| `pveum user add terraform@pve` + `pveum aclmod` | `proxmox_virtual_environment_user.opentofu` |
-| `pveum user token add terraform@pve opentofu --privsep 0` | `proxmox_virtual_environment_user_token.opentofu` |
+| `pveum user add terraform@pve` | `proxmox_virtual_environment_user.opentofu` |
+| `pveum aclmod / -user terraform@pve -role TerraformProv` | `proxmox_acl.opentofu` |
+| `pveum user token add terraform@pve opentofu --privsep 0` | `proxmox_user_token.opentofu` |
 
 The privilege list in `role.tf` is copied verbatim from the original
 `pveum role add` command — the permission surface hasn't changed, only
@@ -53,13 +54,16 @@ operation in Proxmox. Repeat step 1 when you need one.
 
 ## Naming note
 
-`bpg/proxmox` is in the process of renaming several resources ahead of a
-1.0 release (e.g. `proxmox_virtual_environment_user_token` →
-`proxmox_user_token`, `proxmox_virtual_environment_role` →
-`proxmox_role`). This project uses the long-standing
-`_virtual_environment_`-prefixed names for compatibility with older
-pinned versions — if your provider version has already dropped these,
-swap in the shorter names; the arguments are the same.
+`bpg/proxmox` is renaming several resources ahead of a 1.0 release. On
+the pinned `~> 0.112.0`, `tofu plan` confirmed two of ours are affected:
+`proxmox_virtual_environment_user_token` → `proxmox_user_token` (used
+directly, see `token.tf`), and the inline `acl` block that used to live
+on `proxmox_virtual_environment_user` is now the standalone `proxmox_acl`
+resource (see `user.tf`). `proxmox_virtual_environment_role` and
+`proxmox_virtual_environment_user` themselves didn't warn on this
+version, so they're left as-is — check `tofu plan` output again after
+any future provider version bump rather than assuming this list is
+final.
 
 ## State handling
 
