@@ -1,0 +1,11 @@
+# Copy this file to terraform.tfvars (gitignored) and fill in the token
+# from step 1 in README.md.
+
+proxmox_endpoint            = "https://192.168.1.20:8006"
+proxmox_bootstrap_api_token = "root@pam!bootstrap=00000000-0000-0000-0000-000000000000"
+
+# Defaults below already match tofu-talos-homelab's README — only
+# uncomment/change these if you used different names there.
+# opentofu_role_name  = "TerraformProv"
+# opentofu_user_id    = "terraform@pve"
+# opentofu_token_name = "opentofu"
