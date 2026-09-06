@@ -33,3 +33,26 @@ variable "opentofu_token_name" {
   default     = "opentofu"
   description = "Name of the API token minted for the service account"
 }
+
+variable "network_zone_id" {
+  type        = string
+  default     = "talos"
+  description = "Proxmox SDN zone ID (max 8 chars, lowercase, no dashes)"
+}
+
+variable "network_vnet_id" {
+  type        = string
+  default     = "talosnet"
+  description = "Proxmox SDN VNet ID (max 8 chars, lowercase, no dashes) — becomes the bridge name Talos VMs attach to"
+}
+
+variable "network_subnet_cidr" {
+  type        = string
+  default     = "10.10.10.0/24"
+  description = "Must match tofu-talos-homelab's network_gateway/network_cidr_suffix"
+}
+
+variable "network_gateway" {
+  type    = string
+  default = "10.10.10.1"
+}

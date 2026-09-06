@@ -10,6 +10,9 @@ resource "proxmox_virtual_environment_role" "opentofu" {
     "Datastore.AllocateTemplate",
     "Datastore.Audit",
     "Pool.Allocate",
+    "SDN.Allocate",
+    "SDN.Audit",
+    "SDN.Use",
     "Sys.Audit",
     "Sys.Console",
     "Sys.Modify",
@@ -26,6 +29,5 @@ resource "proxmox_virtual_environment_role" "opentofu" {
     "VM.Config.Options",
     "VM.Migrate",
     "VM.PowerMgmt",
-    "SDN.Use",
   ]
 }
