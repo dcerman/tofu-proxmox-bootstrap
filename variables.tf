@@ -11,8 +11,9 @@ variable "proxmox_bootstrap_api_token" {
     hand, once, via the Proxmox web UI: Datacenter -> Permissions ->
     API Tokens -> Add, User = root@pam, Token ID = anything (e.g.
     "bootstrap"), uncheck "Privilege Separation". Format:
-    "root@pam!bootstrap=<uuid>". Safe to revoke from the web UI after
-    the first successful apply — see README.
+    "root@pam!bootstrap=<uuid>". Safe to revoke once you're done
+    iterating on this project; if you're still actively making changes,
+    set an expiry instead of revoking immediately — see README.
   EOT
 }
 

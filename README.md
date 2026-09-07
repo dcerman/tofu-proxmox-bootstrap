@@ -1,8 +1,8 @@
 # tofu-proxmox-bootstrap
 
-One-time (or rarely-run) OpenTofu project that creates the scoped Proxmox
-role, service-account user, and API token that `tofu-talos-homelab` uses
-for everything else.
+One-time (or occasionally-run) OpenTofu project that creates the scoped
+Proxmox role, service-account user, API token, and internal network that
+`tofu-talos-homelab` uses for everything else.
 
 Kept as a separate project on purpose: this is the only place a
 root-level Proxmox credential is ever needed. It never touches SSH or
@@ -19,9 +19,34 @@ non-SSH API path today).
 | `pveum aclmod / -user terraform@pve -role TerraformProv` | `proxmox_acl.opentofu` |
 | `pveum user token add terraform@pve opentofu --privsep 0` | `proxmox_user_token.opentofu` |
 
-The privilege list in `role.tf` is copied verbatim from the original
-`pveum role add` command — the permission surface hasn't changed, only
-how it's created and tracked.
+The privilege list in `role.tf` started as a verbatim copy of the original
+`pveum role add` command, but has since grown: `SDN.Allocate`/`SDN.Audit`
+for the network resources below, and `VM.GuestAgent.Audit`/
+`VM.GuestAgent.Unrestricted` to quiet a permission warning during
+`tofu-talos-homelab`'s apply. Treat `role.tf` as the source of truth
+going forward, not the original command.
+
+## Internal network (SDN)
+
+`network.tf` provisions the isolated network `tofu-talos-homelab`'s VMs
+attach to: a Proxmox SDN simple zone (`talos`), VNet (`talosnet`), and
+subnet (`10.10.10.0/24`, gateway `10.10.10.1`, SNAT for outbound). This
+was previously just assumed to exist in that project's README — it
+never did, which is why the Talos nodes were unreachable after its
+first apply.
+
+`proxmox_sdn_applier` is marked **EXPERIMENTAL** in the provider's docs
+as of `~> 0.112.0` — it's the only sanctioned way to commit pending SDN
+changes today, but worth knowing going in. The `finalizer`/`network`
+two-applier pattern is copied from the provider's own docs, not
+homelab-specific.
+
+SNAT provides outbound internet access only — nothing on your home LAN
+can reach `10.10.10.0/24` directly by default. To manage the cluster
+from a machine other than the Proxmox host itself, add a static route
+on that machine for `10.10.10.0/24` via the Proxmox host's LAN address
+(e.g. `192.168.1.20`) — that's what makes `talosctl`/`kubectl` reachable
+from a laptop in practice.
 
 ## One-time setup
 
@@ -34,23 +59,26 @@ how it's created and tracked.
 2. `cp terraform.tfvars.example terraform.tfvars` and fill in your
    endpoint and that token as `proxmox_bootstrap_api_token`.
 3. `tofu init && tofu plan && tofu apply`
-4. Get the token `tofu-talos-homelab` actually needs:
+4. Get what `tofu-talos-homelab` needs:
    ```sh
-   tofu output -raw opentofu_api_token
+   tofu output -raw opentofu_api_token   # → proxmox_api_token
+   tofu output -raw network_vnet_id      # → network_bridge
    ```
-   Paste that into `tofu-talos-homelab`'s `terraform.tfvars` as
-   `proxmox_api_token`.
-5. Optional but recommended: go back to Datacenter → Permissions →
-   API Tokens and revoke `root@pam!bootstrap`. Nothing here needs it
-   again unless you're re-applying this project later.
+   Paste each into that project's `terraform.tfvars`.
+5. Optional but recommended once you're done iterating: go back to
+   Datacenter → Permissions → API Tokens and revoke `root@pam!bootstrap`.
+   If you're still actively making changes to this project, an expiring
+   token (rather than an immediate revoke) avoids re-authentication
+   errors on your next `tofu plan`.
 
 ## Re-running this project
 
-Because this is now code, changing the role's privileges or rotating the
-`opentofu` token is a `tofu apply` away instead of a retyped `pveum`
-session — but any apply of *this* project still needs a root-scoped
-token, since managing users/roles/tokens is inherently a root-level
-operation in Proxmox. Repeat step 1 when you need one.
+Because this is now code, changing the role's privileges, the internal
+network, or rotating the `opentofu` token is a `tofu apply` away instead
+of a retyped `pveum`/manual-network session — but any apply of *this*
+project still needs a root-scoped token, since managing users/roles/
+tokens is inherently a root-level operation in Proxmox. Repeat step 1
+when you need one.
 
 ## Naming note
 
@@ -63,11 +91,14 @@ resource (see `user.tf`). `proxmox_virtual_environment_role` and
 `proxmox_virtual_environment_user` themselves didn't warn on this
 version, so they're left as-is — check `tofu plan` output again after
 any future provider version bump rather than assuming this list is
-final.
+final. The SDN resources in `network.tf` already use the short-form
+names (`proxmox_sdn_zone_simple`, `proxmox_sdn_vnet`, etc.), which never
+had a deprecated long form to begin with.
 
 ## State handling
 
-State here holds the role definition, the user object, and the token's
-*identifier* — Proxmox doesn't return a token's secret on read, so it
-only appears in state right after creation. Don't commit
-`terraform.tfstate` regardless, same as any project touching credentials.
+State here holds the role definition, the user object, the token's
+*identifier*, and the SDN network config — Proxmox doesn't return a
+token's secret on read, so it only appears in state right after
+creation. Don't commit `terraform.tfstate` regardless, same as any
+project touching credentials.
