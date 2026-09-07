@@ -27,6 +27,8 @@ resource "proxmox_virtual_environment_role" "opentofu" {
     "VM.Config.Memory",
     "VM.Config.Network",
     "VM.Config.Options",
+    "VM.GuestAgent.Audit",
+    "VM.GuestAgent.Unrestricted",
     "VM.Migrate",
     "VM.PowerMgmt",
   ]
