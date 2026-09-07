@@ -3,10 +3,9 @@
 One-time (or occasionally-run) OpenTofu project that creates the scoped
 Proxmox role, service-account user, API token, and internal network that
 `tofu-talos-homelab` uses for everything else.
-
 Kept as a separate project on purpose: this is the only place a
-root-level Proxmox credential is ever needed. It never touches SSH or
-the OS-level `root` account — that stays confined to `tofu-talos-homelab`,
+root-level Proxmox credential is ever needed. It never touches SSH or the
+OS-level `root` account — that stays confined to `tofu-talos-homelab`,
 which needs it for an unrelated reason (disk-image import has no
 non-SSH API path today).
 
@@ -48,6 +47,33 @@ on that machine for `10.10.10.0/24` via the Proxmox host's LAN address
 (e.g. `192.168.1.20`) — that's what makes `talosctl`/`kubectl` reachable
 from a laptop in practice.
 
+### Administrative workstation networking
+
+The route above belongs to the administrator's workstation network
+configuration, not to this OpenTofu project. It should therefore be
+configured using the workstation's native network-management tools
+rather than an OpenTofu provisioner.
+
+On a Linux workstation using NetworkManager:
+
+```sh
+nmcli connection show
+sudo nmcli connection modify "<connection>"   +ipv4.routes "10.10.10.0/24 192.168.1.20"
+sudo nmcli connection up "<connection>"
+```
+
+Replace `192.168.1.20` with the Proxmox host's LAN address and
+`<connection>` with the active NetworkManager connection.
+
+Verify the route with:
+
+```sh
+ip route get 10.10.10.11
+```
+
+The route is required for direct administration with `talosctl` and for
+OpenTofu's Talos provider, as well as for `kubectl` access to the cluster.
+
 ## One-time setup
 
 1. In the Proxmox web UI: **Datacenter → Permissions → API Tokens → Add**
@@ -86,9 +112,9 @@ when you need one.
 the pinned `~> 0.112.0`, `tofu plan` confirmed two of ours are affected:
 `proxmox_virtual_environment_user_token` → `proxmox_user_token` (used
 directly, see `token.tf`), and the inline `acl` block that used to live
-on `proxmox_virtual_environment_user` is now the standalone `proxmox_acl`
-resource (see `user.tf`). `proxmox_virtual_environment_role` and
-`proxmox_virtual_environment_user` themselves didn't warn on this
+on `proxmox_virtual_environment_user` is now the standalone
+`proxmox_acl` resource (see `user.tf`). `proxmox_virtual_environment_role`
+and `proxmox_virtual_environment_user` themselves didn't warn on this
 version, so they're left as-is — check `tofu plan` output again after
 any future provider version bump rather than assuming this list is
 final. The SDN resources in `network.tf` already use the short-form
