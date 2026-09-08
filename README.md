@@ -20,10 +20,12 @@ non-SSH API path today).
 
 The privilege list in `role.tf` started as a verbatim copy of the original
 `pveum role add` command, but has since grown: `SDN.Allocate`/`SDN.Audit`
-for the network resources below, and `VM.GuestAgent.Audit`/
+for the network resources below, `VM.GuestAgent.Audit`/
 `VM.GuestAgent.Unrestricted` to quiet a permission warning during
-`tofu-talos-homelab`'s apply. Treat `role.tf` as the source of truth
-going forward, not the original command.
+`tofu-talos-homelab`'s apply, and `Datastore.Allocate` after a
+`tofu destroy` failed to remove the downloaded Talos ISO with only
+`Datastore.AllocateSpace`/`Datastore.AllocateTemplate` granted. Treat
+`role.tf` as the source of truth going forward, not the original command.
 
 ## Internal network (SDN)
 

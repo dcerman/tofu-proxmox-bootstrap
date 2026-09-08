@@ -1,7 +1,7 @@
-# Privileges copied 1:1 from the original:
+# Privileges started as a verbatim copy of the original:
 #   pveum role add TerraformProv -privs "..."
-# in tofu-talos-homelab's README — nothing about what this role can do
-# has changed, only how it's created.
+# in tofu-talos-homelab's README, but has since grown — see this repo's
+# README ("What this replaces") for the running list of additions and why.
 resource "proxmox_virtual_environment_role" "opentofu" {
   role_id = var.opentofu_role_name
 
