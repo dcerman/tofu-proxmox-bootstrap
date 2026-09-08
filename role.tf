@@ -6,6 +6,7 @@ resource "proxmox_virtual_environment_role" "opentofu" {
   role_id = var.opentofu_role_name
 
   privileges = [
+    "Datastore.Allocate",
     "Datastore.AllocateSpace",
     "Datastore.AllocateTemplate",
     "Datastore.Audit",
